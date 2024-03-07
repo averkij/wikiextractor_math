@@ -62,18 +62,27 @@ import sys
 from io import StringIO
 from multiprocessing import Queue, get_context, cpu_count
 from timeit import default_timer
-
-# from .extract import Extractor, ignoreTag, define_template, acceptedNamespaces
-
-
-import re
 import html
 import json
 from itertools import zip_longest
 from urllib.parse import quote as urlencode
 from html.entities import name2codepoint
-import logging
 import time
+import os
+
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] - %(process)d: %(message)s",
+    datefmt="%d-%b-%y %H:%M:%S",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("_wikilog.log", mode="a"),
+    ],
+)
+logging.getLogger("matplotlib.font_manager").disabled = True
+
 
 #========== extract.py
 
@@ -221,7 +230,10 @@ def clean(extractor, text, expand_templates=False, html_safe=True):
     for pattern, placeholder in placeholder_tag_patterns_inline_formula:
         for match in pattern.finditer(text):
             text = text.replace(match.group(), f'${match.group(2)}$')
-            math_count += 1   
+            math_count += 1
+
+    if math_count > 0:
+        logging.info(f"Found {math_count} formulas.")
 
     text = text.replace('<<', u'«').replace('>>', u'»')
 
